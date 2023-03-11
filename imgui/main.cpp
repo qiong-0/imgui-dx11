@@ -16,6 +16,19 @@ static ID3D11DeviceContext*     g_pd3dDeviceContext = NULL;
 static IDXGISwapChain*          g_pSwapChain = NULL;
 static ID3D11RenderTargetView*  g_mainRenderTargetView = NULL;
 
+bool menu = true, 透视 = true, 血量 = true, 信息 = true, 名字, 观战 = true, 物品, 范围;
+bool 自瞄, 隔墙, 预判, 兔子跳, TS, SG, 热能, 内存, 人称;
+int 距离 = 75, 模式 = 0, 热键, 速度 = 10, 范围2 = 30, 开枪;
+ImVec4 透视1 = ImVec4(1.0f, 0.0f, 0.0f, 1.00f);
+ImVec4 透视2 = ImVec4(0.0f, 1.0f, 0.0f, 1.00f);
+ImVec4 信息1 = ImVec4(1.0f, 1.0f, 0.0f, 1.00f);
+ImVec4 信息2 = ImVec4(0.43f, 0.8f, 1.0f, 1.00f);
+ImVec4 名字1 = ImVec4(0.43f, 0.8f, 0.5f, 1.00f);
+ImVec4 观战1 = ImVec4(1.0f, 1.0f, 1.0f, 1.00f);
+ImVec4 范围1 = ImVec4(1.0f, 1.0f, 1.0f, 1.00f);
+ImVec4 热能1 = ImVec4(1.0f, 0.0f, 0.0f, 1.00f);
+ImVec4 热能2 = ImVec4(0.0f, 1.0f, 0.0f, 1.00f);
+
 // Forward declarations of helper functions
 bool CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
@@ -102,8 +115,6 @@ int main(int, char**)
 
     ImVec4 color = ImVec4(1.0f, 0.0f, 1.0f, 1.0f);
 
-    bool menu = true;
-
     // Main loop
     bool done = false;
     while (!done)
@@ -175,6 +186,76 @@ int main(int, char**)
             ImGui::Text("Hello from another window!");
             if (ImGui::Button("Close Me"))
                 show_another_window = false;
+            ImGui::End();
+        }
+
+        if (menu)
+        {
+            ImGui::Begin("##menu", (bool*)true, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+            if (ImGui::BeginTabBar("##menu2"))
+            {
+                if (ImGui::BeginTabItem(u8"透视类"))
+                {
+                    ImGui::Checkbox(u8"方框透视", &透视);
+                    ImGui::SameLine();
+                    ImGui::ColorEdit4("##1", (float*)&透视1, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                    ImGui::SameLine();
+                    ImGui::ColorEdit4("##2", (float*)&透视2, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                    ImGui::Checkbox(u8"显示血量", &血量);
+                    ImGui::Checkbox(u8"显示信息", &信息);
+                    ImGui::SameLine();
+                    ImGui::ColorEdit4("##3", (float*)&信息1, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                    ImGui::SameLine();
+                    ImGui::ColorEdit4("##4", (float*)&信息2, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                    ImGui::Checkbox(u8"显示名字", &名字);
+                    ImGui::SameLine();
+                    ImGui::ColorEdit4("##5", (float*)&名字1, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                    ImGui::Checkbox(u8"显示观战", &观战);
+                    ImGui::SameLine();
+                    ImGui::ColorEdit4("##6", (float*)&观战1, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                    ImGui::Checkbox(u8"显示物品", &物品);
+                    ImGui::Checkbox(u8"显示范围", &范围);
+                    ImGui::SameLine();
+                    ImGui::ColorEdit4("##7", (float*)&范围1, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                    const char* 模式1[] = { u8"普通", u8"个人", u8"特殊" };
+                    ImGui::Combo(u8"游戏模式", &模式, 模式1, IM_ARRAYSIZE(模式1));
+                    ImGui::DragInt(u8"透视距离", &距离, 5, 75, 3000, "%d", ImGuiSliderFlags_AlwaysClamp);
+                    ImGui::EndTabItem();
+                }
+                if (ImGui::BeginTabItem(u8"自瞄类"))
+                {
+                    ImGui::Checkbox(u8"自动瞄准", &自瞄);
+                    const char* 热键1[] = { u8"左键", u8"右键", u8"左右键", u8"侧键4", u8"侧键5" };
+                    ImGui::Combo(u8"自瞄热键", &热键, 热键1, IM_ARRAYSIZE(热键1));
+                    ImGui::Checkbox(u8"隔墙不锁", &隔墙);
+                    ImGui::Checkbox(u8"自动预判", &预判);
+                    ImGui::SliderInt(u8"自瞄速度", &速度, 1, 10);
+                    ImGui::SliderInt(u8"自瞄范围", &范围2, 1, 180);
+                    const char* 开枪1[] = { u8"关闭", u8"右键", u8"侧键4", u8"侧键5" };
+                    ImGui::Combo(u8"自瞄开枪", &开枪, 开枪1, IM_ARRAYSIZE(开枪1));
+                    ImGui::EndTabItem();
+                }
+                if (ImGui::BeginTabItem(u8"功能类"))
+                {
+                    ImGui::Checkbox(u8"兔子跳", &兔子跳);
+                    ImGui::Checkbox(u8"一键TS", &TS);
+                    ImGui::Checkbox(u8"一键SG", &SG);
+                    ImGui::EndTabItem();
+                }
+                if (ImGui::BeginTabItem(u8"内存类"))
+                {
+                    ImGui::Checkbox(u8"全局热能", &热能);
+                    ImGui::SameLine();
+                    ImGui::ColorEdit4("##8", (float*)&热能1, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                    ImGui::SameLine();
+                    ImGui::ColorEdit4("##9", (float*)&热能2, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                    ImGui::Checkbox(u8"内存自瞄", &内存);
+                    ImGui::Checkbox(u8"第三人称", &人称);
+                    ImGui::EndTabItem();
+                }
+                ImGui::EndTabBar();
+            }
+            ImGui::Text(u8"绘制 FPS: %.3f 毫秒/帧 (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::End();
         }
 
