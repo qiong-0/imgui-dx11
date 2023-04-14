@@ -36,6 +36,29 @@ void CreateRenderTarget();
 void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+void Rect(int x, int y, int w, int h, ImColor color)
+{
+    //GetForegroundDrawList
+    //GetBackgroundDrawList
+    //GetWindowDrawList
+    ImGui::GetBackgroundDrawList()->AddRect(ImVec2(x, y), ImVec2(x + w, y + h), color);
+}
+
+void Line(ImVec2 a, ImVec2 b, ImColor color)
+{
+    ImGui::GetBackgroundDrawList()->AddLine(a, b, color);
+}
+
+void Text(int x, int y, ImColor color, const char* text)
+{
+    ImGui::GetBackgroundDrawList()->AddText(ImVec2(x, y), color, text);
+}
+
+void Circle(float x, float y, float radius, ImColor color)
+{
+    ImGui::GetBackgroundDrawList()->AddCircle(ImVec2(x, y), radius, color);
+}
+
 // Main code
 int main(int, char**)
 {
@@ -258,6 +281,14 @@ int main(int, char**)
             ImGui::Text(u8"绘制 FPS: %.3f 毫秒/帧 (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::End();
         }
+
+        Circle(50, 50, 100, 名字1);
+
+        Rect(10, 10, 35, 50, 透视2);
+
+        Line(ImVec2(1, 1), ImVec2(100, 100), 热能1);
+
+        Text(150, 150, 范围1, u8"中文sft667");
 
         // Rendering
         ImGui::Render();
