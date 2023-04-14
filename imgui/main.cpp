@@ -16,18 +16,10 @@ static ID3D11DeviceContext*     g_pd3dDeviceContext = NULL;
 static IDXGISwapChain*          g_pSwapChain = NULL;
 static ID3D11RenderTargetView*  g_mainRenderTargetView = NULL;
 
-bool menu = true, 透视 = true, 血量 = true, 信息 = true, 名字, 观战 = true, 物品, 范围;
-bool 自瞄, 隔墙, 预判, 兔子跳, TS, SG, 热能, 内存, 人称;
-int 距离 = 75, 模式 = 0, 热键, 速度 = 10, 范围2 = 30, 开枪;
+bool menu = true, 透视;
+int 距离 = 75, 模式 = 0, 速度 = 10, 范围2 = 30, 游戏中心x = 50, 游戏中心y = 50;
 ImVec4 透视1 = ImVec4(1.0f, 0.0f, 0.0f, 1.00f);
-ImVec4 透视2 = ImVec4(0.0f, 1.0f, 0.0f, 1.00f);
-ImVec4 信息1 = ImVec4(1.0f, 1.0f, 0.0f, 1.00f);
-ImVec4 信息2 = ImVec4(0.43f, 0.8f, 1.0f, 1.00f);
-ImVec4 名字1 = ImVec4(0.43f, 0.8f, 0.5f, 1.00f);
-ImVec4 观战1 = ImVec4(1.0f, 1.0f, 1.0f, 1.00f);
-ImVec4 范围1 = ImVec4(1.0f, 1.0f, 1.0f, 1.00f);
-ImVec4 热能1 = ImVec4(1.0f, 0.0f, 0.0f, 1.00f);
-ImVec4 热能2 = ImVec4(0.0f, 1.0f, 0.0f, 1.00f);
+RECT 游戏;
 
 // Forward declarations of helper functions
 bool CreateDeviceD3D(HWND hWnd);
@@ -36,7 +28,7 @@ void CreateRenderTarget();
 void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-void Rect(int x, int y, int w, int h, ImColor color)
+void Rect(float x, float y, float w, float h, ImColor color)
 {
     //GetForegroundDrawList
     //GetBackgroundDrawList
@@ -44,12 +36,12 @@ void Rect(int x, int y, int w, int h, ImColor color)
     ImGui::GetBackgroundDrawList()->AddRect(ImVec2(x, y), ImVec2(x + w, y + h), color);
 }
 
-void Line(ImVec2 a, ImVec2 b, ImColor color)
+void Line(float x1, float y1, float x2, float y2, ImColor color)
 {
-    ImGui::GetBackgroundDrawList()->AddLine(a, b, color);
+    ImGui::GetBackgroundDrawList()->AddLine(ImVec2(x2, y2), ImVec2(x1, y1), color);
 }
 
-void Text(int x, int y, ImColor color, const char* text)
+void Text(float x, float y, ImColor color, const char* text)
 {
     ImGui::GetBackgroundDrawList()->AddText(ImVec2(x, y), color, text);
 }
@@ -131,12 +123,17 @@ int main(int, char**)
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
 
+    HWND 句柄 = FindWindow(L"Valve001", L"Counter-Strike: Global Offensive - Direct3D 9");
+
     // Our state
     bool show_demo_window = true;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
 
     ImVec4 color = ImVec4(1.0f, 0.0f, 1.0f, 1.0f);
+
+    SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_TOOLWINDOW);
+    SetForegroundWindow(hwnd);
 
     // Main loop
     bool done = false;
@@ -158,16 +155,35 @@ int main(int, char**)
         if (GetAsyncKeyState(VK_INSERT) != 0)
         {
             menu = !menu;
+            if (menu)
+            {
+                SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_TOOLWINDOW);
+                SetForegroundWindow(hwnd);
+            }
+            else
+            {
+                SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT);
+                if (句柄 > (HWND)0)
+                {
+                    SetForegroundWindow(句柄);
+                }
+            }
             Sleep(125);
         }
 
-        if (menu)
+        if (句柄 > (HWND)0)
         {
-            SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_TOOLWINDOW);
-        }
-        else
-        {
-            SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT);
+            POINT a = { 0 };
+            ClientToScreen(句柄, &a);
+            RECT b;
+            GetClientRect(句柄, &b);
+            游戏.left = a.x;
+            游戏.top = a.y;
+            游戏.right = b.right;
+            游戏.bottom = b.bottom;
+            游戏中心x = b.right / 2;
+            游戏中心y = b.bottom / 2;
+            SetWindowPos(hwnd, HWND_TOPMOST, 游戏.left, 游戏.top, 游戏.right, 游戏.bottom, NULL);
         }
 
         // Start the Dear ImGui frame
@@ -222,58 +238,14 @@ int main(int, char**)
                     ImGui::Checkbox(u8"方框透视", &透视);
                     ImGui::SameLine();
                     ImGui::ColorEdit4("##1", (float*)&透视1, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-                    ImGui::SameLine();
-                    ImGui::ColorEdit4("##2", (float*)&透视2, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-                    ImGui::Checkbox(u8"显示血量", &血量);
-                    ImGui::Checkbox(u8"显示信息", &信息);
-                    ImGui::SameLine();
-                    ImGui::ColorEdit4("##3", (float*)&信息1, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-                    ImGui::SameLine();
-                    ImGui::ColorEdit4("##4", (float*)&信息2, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-                    ImGui::Checkbox(u8"显示名字", &名字);
-                    ImGui::SameLine();
-                    ImGui::ColorEdit4("##5", (float*)&名字1, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-                    ImGui::Checkbox(u8"显示观战", &观战);
-                    ImGui::SameLine();
-                    ImGui::ColorEdit4("##6", (float*)&观战1, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-                    ImGui::Checkbox(u8"显示物品", &物品);
-                    ImGui::Checkbox(u8"显示范围", &范围);
-                    ImGui::SameLine();
-                    ImGui::ColorEdit4("##7", (float*)&范围1, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-                    const char* 模式1[] = { u8"普通", u8"个人", u8"特殊" };
-                    ImGui::Combo(u8"游戏模式", &模式, 模式1, IM_ARRAYSIZE(模式1));
+                    ImGui::Combo(u8"游戏模式", &模式, u8"普通\0个人\0特殊\0");
                     ImGui::DragInt(u8"透视距离", &距离, 5, 75, 3000, "%d", ImGuiSliderFlags_AlwaysClamp);
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem(u8"自瞄类"))
                 {
-                    ImGui::Checkbox(u8"自动瞄准", &自瞄);
-                    const char* 热键1[] = { u8"左键", u8"右键", u8"左右键", u8"侧键4", u8"侧键5" };
-                    ImGui::Combo(u8"自瞄热键", &热键, 热键1, IM_ARRAYSIZE(热键1));
-                    ImGui::Checkbox(u8"隔墙不锁", &隔墙);
-                    ImGui::Checkbox(u8"自动预判", &预判);
                     ImGui::SliderInt(u8"自瞄速度", &速度, 1, 10);
                     ImGui::SliderInt(u8"自瞄范围", &范围2, 1, 180);
-                    const char* 开枪1[] = { u8"关闭", u8"右键", u8"侧键4", u8"侧键5" };
-                    ImGui::Combo(u8"自瞄开枪", &开枪, 开枪1, IM_ARRAYSIZE(开枪1));
-                    ImGui::EndTabItem();
-                }
-                if (ImGui::BeginTabItem(u8"功能类"))
-                {
-                    ImGui::Checkbox(u8"兔子跳", &兔子跳);
-                    ImGui::Checkbox(u8"一键TS", &TS);
-                    ImGui::Checkbox(u8"一键SG", &SG);
-                    ImGui::EndTabItem();
-                }
-                if (ImGui::BeginTabItem(u8"内存类"))
-                {
-                    ImGui::Checkbox(u8"全局热能", &热能);
-                    ImGui::SameLine();
-                    ImGui::ColorEdit4("##8", (float*)&热能1, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-                    ImGui::SameLine();
-                    ImGui::ColorEdit4("##9", (float*)&热能2, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-                    ImGui::Checkbox(u8"内存自瞄", &内存);
-                    ImGui::Checkbox(u8"第三人称", &人称);
                     ImGui::EndTabItem();
                 }
                 ImGui::EndTabBar();
@@ -282,13 +254,13 @@ int main(int, char**)
             ImGui::End();
         }
 
-        Circle(50, 50, 100, 名字1);
+        Circle(游戏中心x, 游戏中心y, 30, ImVec4(1.f, 1.f, 1.f, 1.f));
 
-        Rect(10, 10, 35, 50, 透视2);
+        Rect(10, 10, 35, 50, ImVec4(1.f, 0.f, 1.f, 1.f));
 
-        Line(ImVec2(1, 1), ImVec2(100, 100), 热能1);
+        Line(1,1,100, 100, ImVec4(1.f, 1.f, 0.f, 1.f));
 
-        Text(150, 150, 范围1, u8"中文sft667");
+        Text(150, 50, ImVec4(0.f, 1.f, 1.f, 1.f), u8"中文sft667");
 
         // Rendering
         ImGui::Render();
